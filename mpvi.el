@@ -271,6 +271,16 @@ Alert user when not seekable when ARG not nil."
         (user-error "Current video is not seekable, do nothing")
       seekable)))
 
+(defun mpvi-ab-loop-p ()
+  "Whether in ab-loop?"
+  (let ((time-a (mpvi-prop 'ab-loop-a))
+        (time-b (mpvi-prop 'ab-loop-b))
+        (pos (mpvi-prop 'playback-time)))
+    (and (numberp time-a)
+         (numberp time-b)
+         (<= time-a pos)
+         (<= pos time-b))))
+
 (defun mpvi-speed (&optional n)
   "Tune the speed base on N."
   (mpvi-seekable 'assert)
@@ -1256,6 +1266,33 @@ If any, prompt user to choose one video in playlist to play."
 ;; [others]
 
 ;;;###autoload
+(defun mpvi-insert-loop (&optional prompt)
+  "Insert a mpv link or update a mpv link at point.
+PROMPT is used in minibuffer when invoke `mpvi-seek'."
+  (interactive "P")
+  (if (derived-mode-p 'org-mode)
+      (let ((path (mpvi-origin-path)) description)
+        (unless (mpvi-seekable)
+          (user-error "Current video is not seekable, it makes no sense to insert timestamp link"))
+        (mpvi-with-current-mpv-link (node path)
+          (if (mpvi-ab-loop-p)
+              (progn)
+            (when-let (ret (mpvi-seek (if node (plist-get node :vbeg)) prompt))
+              (mpvi-pause t)
+              ;; if on a mpv link, update it
+              (if node (delete-region (plist-get node :begin) (plist-get node :end))
+                ;; if new insert, prompt for description
+                (unwind-protect
+                    (setq description (string-trim (read-string "Description: ")))
+                  (mpvi-pause (cdr ret))))
+              ;; insert the new link
+              (let ((link (funcall mpvi-build-link-function path (car ret)
+                                   (if node (plist-get node :vend))
+                                   (if (> (length description) 0) description))))
+                (save-excursion (insert link)))))))
+    (user-error "This is not org-mode, should not insert org link")))
+
+
 (defun mpvi-insert (&optional prompt)
   "Insert a mpv link or update a mpv link at point.
 PROMPT is used in minibuffer when invoke `mpvi-seek'."
