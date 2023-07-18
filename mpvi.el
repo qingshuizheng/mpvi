@@ -1376,8 +1376,9 @@ ARG is the argument."
   (interactive)
   (mpvi-with-current-mpv-link (node)
     (when node
-      (let ((ret (mpvi-seek (or (plist-get node :vend)
-                                (max (plist-get node :vbeg) (mpvi-prop 'playback-time)))
+      (let ((ret (mpvi-seek (or
+                             ;; (plist-get node :vend)
+                             (max (plist-get node :vbeg) (mpvi-prop 'playback-time)))
                             (format "Set end position (%d-%d): " (plist-get node :vbeg) (mpvi-prop 'duration)))))
         (delete-region (plist-get node :begin) (plist-get node :end))
         (let ((link (funcall mpvi-build-link-function (plist-get node :path)
