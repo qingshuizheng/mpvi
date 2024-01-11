@@ -972,7 +972,7 @@ Keybind `C-x b' to choose video path from `mpvi-favor-paths'."
   (unless (consp mpvi-favor-paths)
     (user-error "You should add your favor paths into `mpvi-favor-paths' first"))
   (let* ((annfn (lambda (it)
-                  (when-let (s (alist-get it mpvi-favor-paths))
+                  (when-let (s (alist-get it mpvi-favor-paths nil nil #'equal))
                     (format "    (%s)" s))))
          (path (completing-read "Choose video to play: "
                                 (lambda (input pred action)
